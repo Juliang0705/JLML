@@ -14,7 +14,7 @@ class LinearRegression(object):
                  learning_rate=0.05,
                  learning_method=default,
                  max_steps=1000,
-                 threshold=0.01,
+                 threshold=0.001,
                  enable_feature_scale=False):
 
         self.has_trained_flag = False
@@ -26,7 +26,7 @@ class LinearRegression(object):
         self.thetas = None
 
     @staticmethod
-    def __add_ones_column(features):
+    def add_ones_column(features):
         """
         add a column of 1s to the matrix in the left most position
         :param features: np.matrix (data size x # of features)
@@ -38,7 +38,7 @@ class LinearRegression(object):
         return features
 
     @staticmethod
-    def __scale_features(features):
+    def scale_features(features):
         """
         scale the features to make the value fit between 0 and 1
         :param features: np.matrix (data size x # of features)
@@ -61,7 +61,7 @@ class LinearRegression(object):
         :param xs: np.matrix (1 x # of features)
         :return: float
         """
-        return (xs * self.thetas.T).item()
+        return (xs * self.thetas.transpose()).item()
 
     def __cost_function(self, features, labels, index):
         """
@@ -96,10 +96,10 @@ class LinearRegression(object):
         """
 
         if self.enable_feature_scale:
-            features = LinearRegression.__scale_features(features)
-            labels = LinearRegression.__scale_features(labels)
+            features = LinearRegression.scale_features(features)
+            labels = LinearRegression.scale_features(labels)
 
-        features = LinearRegression.__add_ones_column(features)
+        features = LinearRegression.add_ones_column(features)
         data_size, feature_size = features.shape
         self.thetas = np.zeros((1, feature_size), dtype='f')
 
@@ -119,6 +119,7 @@ class LinearRegression(object):
 
             if previous_learning_cost:
                 cost_diff = abs(previous_learning_cost - current_learning_cost)
+                previous_learning_cost = current_learning_cost
             else:
                 previous_learning_cost = current_learning_cost
 
@@ -133,7 +134,7 @@ class LinearRegression(object):
         :param labels: np.matrix (data size x 1)
         :return: None
         """
-        features = LinearRegression.__add_ones_column(features)
+        features = LinearRegression.add_ones_column(features)
         self.thetas = (np.linalg.pinv(features.transpose() * features) * features.transpose() * labels).transpose()
 
     def train(self, features, labels):
@@ -166,10 +167,10 @@ class LinearRegression(object):
             raise ModelNotTrainedError('Linear regression model is used before being trained.')
 
         if self.enable_feature_scale and self.learning_method == LinearRegression.gradient_descent:
-            features = LinearRegression.__scale_features(features)
+            features = LinearRegression.scale_features(features)
 
-        features = LinearRegression.__add_ones_column(features)
-        return features * self.thetas.T
+        features = LinearRegression.add_ones_column(features)
+        return features * self.thetas.transpose()
 
 
 def test():
