@@ -11,35 +11,60 @@ class BinaryLogisticRegression(object):
 
     def __init__(self,
                  learning_rate=0.05,
-                 max_steps=1000,
-                 threshold=0.001):
+                 max_steps=2000,
+                 threshold=0.0001,
+                 regularization_rate=0.0):
 
         self.has_trained_flag = False
         self.learning_rate = learning_rate
         self.max_steps = max_steps
         self.threshold = threshold
+        self.regularization_rate = regularization_rate
         self.thetas = None
 
     @staticmethod
     def __is_binary_labels(labels):
+        """
+        check if input is a vector with only 1 and 0 as its value
+        :param labels: np.matrix
+        :return: bool
+        """
         label_count = Counter(sum(labels.tolist(), []))
         return labels.shape[1] == 1 and len(label_count) <= 2 and 1 in label_count and 0 in label_count
 
     @staticmethod
-    def __sigmoid(value):
+    def sigmoid(value):
+        """
+        logistic function
+        :param value: number
+        :return: number in range [0, 1]
+        """
         return 1 / (1 + np.exp(-value))
 
     def __hypothesis_function(self, xs):
+        """
+        h(x) = sigmoid( theta0 * x0 + theta1 * x1 + theta2 * x2 + ... + thetan * xn )
+        :param xs: np.matrix (1 x # of features)
+        :return: float
+        """
         value = (xs * self.thetas.transpose()).item()
-        return BinaryLogisticRegression.__sigmoid(value)
+        return BinaryLogisticRegression.sigmoid(value)
 
     def __cost_function(self, features, labels, index):
+        """
+        calculate the learning cost
+        :param features: np.matrix (data size x # of features)
+        :param labels: np.matrix (data size x 1)
+        :param index: int, index of current row
+        :return: float
+        """
         data_size, feature_size = features.shape
         total = 0
         for m in xrange(data_size):
             row = features[m, :]
             total += (self.__hypothesis_function(row) - labels[m, 0]) * features[m, index]
-        return self.learning_rate * total / float(data_size)
+        regularization = self.regularization_rate * self.thetas[0, index]
+        return (self.learning_rate * total + regularization) / float(data_size)
 
     def __convergence_test(self, cost):
         """
@@ -50,6 +75,13 @@ class BinaryLogisticRegression(object):
         return cost <= self.threshold
 
     def train(self, features, labels):
+        """
+        use gradient descent algorithm to fit the data set.
+        only support labels with 1 and 0 as its value
+        :param features: np.matrix (data size x # of features)
+        :param labels: np.matrix (data size x 1)
+        :return: None
+        """
         if not BinaryLogisticRegression.__is_binary_labels(labels):
             raise NotBinaryLabelsError("Labels can only have 1 or 0 as values")
 
@@ -83,11 +115,16 @@ class BinaryLogisticRegression(object):
         self.has_trained_flag = True
 
     def predict(self, features):
+        """
+        predict the labels using the trained model.
+        :param features: np.matrix (data size x # of features)
+        :return: np.matrix (data size x 1)
+        """
         if not self.has_trained_flag:
             raise ModelNotTrainedError('Logistic regression model is used before being trained.')
 
         features = LinearRegression.add_ones_column(features)
-        vectorized_sigmoid = np.vectorize(BinaryLogisticRegression.__sigmoid)
+        vectorized_sigmoid = np.vectorize(BinaryLogisticRegression.sigmoid)
         return vectorized_sigmoid(features * self.thetas.transpose())
 
 
@@ -95,22 +132,37 @@ class LogisticRegression(object):
 
     def __init__(self,
                  learning_rate=0.05,
-                 max_steps=1000,
-                 threshold=0.001):
+                 max_steps=2000,
+                 threshold=0.0001,
+                 regularization_rate=0.0):
 
         self.learning_rate = learning_rate
         self.max_steps = max_steps
         self.threshold = threshold
+        self.regularization_rate = regularization_rate
         self.label_set = None
         self.label_type = None
         self.classifier_list = None
 
     @staticmethod
     def __transform_label(labels, value):
+        """
+        transform the label to binary 1 and 0
+        :param labels: np.matrix
+        :param value: target positive type
+        :return: np.matrix
+        """
         transformer = np.vectorize(lambda v: 1 if v == value else 0)
         return transformer(labels)
 
     def train(self, features, labels):
+        """
+        Build a model with the data set.
+        Support multi-label data set using one v.s all method
+        :param features: np.matrix
+        :param labels: np.matrix
+        :return: None
+        """
         self.label_type = labels.dtype
         self.label_set = set(sum(labels.tolist(), []))
         self.classifier_list = {}
@@ -118,11 +170,17 @@ class LogisticRegression(object):
             transformed_labels = LogisticRegression.__transform_label(labels, label)
             classifier = BinaryLogisticRegression(learning_rate=self.learning_rate,
                                                   max_steps=self.max_steps,
-                                                  threshold=self.threshold)
+                                                  threshold=self.threshold,
+                                                  regularization_rate=self.regularization_rate)
             classifier.train(features, transformed_labels)
             self.classifier_list[label] = classifier
 
     def predict(self, features):
+        """
+        predict the labels using the trained model.
+        :param features: np.matrix (data size x # of features)
+        :return: np.matrix (data size x 1)
+        """
         data_size, feature_size = features.shape
         prediction = np.zeros((data_size, 1), dtype=self.label_type)
         for m in xrange(data_size):
@@ -143,7 +201,8 @@ def test():
 
     blr = BinaryLogisticRegression(learning_rate=0.001,
                                    max_steps=3000,
-                                   threshold=0.0001)
+                                   threshold=0.0001,
+                                   regularization_rate=0.1)
     features = np.matrix([[-20, -10, -3, 1, 4, 7, 10, 11, 13, 15, 40, 50]], dtype='f').transpose()
     labels = np.matrix([[0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1]], dtype='f').transpose()
     blr.train(features, labels)
@@ -153,7 +212,8 @@ def test():
 
     lr = LogisticRegression(learning_rate=0.01,
                             max_steps=2000,
-                            threshold=0.001)
+                            threshold=0.001,
+                            regularization_rate=0.1)
     features = np.matrix([[-20, -10, -3, 1, 4, 7, 10, 11, 13, 15, 40, 50]], dtype='f').transpose()
     labels = np.matrix([['red', 'red', 'red', 'red', 'red', 'red', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue']]).transpose()
     test_features = np.matrix([[-5, 0, 2, 4, 1, 14, 100]], dtype='f').transpose()

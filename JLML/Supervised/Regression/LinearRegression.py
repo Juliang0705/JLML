@@ -13,8 +13,9 @@ class LinearRegression(object):
     def __init__(self,
                  learning_rate=0.05,
                  learning_method=default,
-                 max_steps=1000,
-                 threshold=0.001,
+                 max_steps=2000,
+                 threshold=0.0001,
+                 regularization_rate=0.0,
                  enable_feature_scale=False):
 
         self.has_trained_flag = False
@@ -22,6 +23,7 @@ class LinearRegression(object):
         self.learning_method = learning_method
         self.max_steps = max_steps
         self.threshold = threshold
+        self.regularization_rate = regularization_rate
         self.enable_feature_scale = enable_feature_scale
         self.thetas = None
 
@@ -76,7 +78,8 @@ class LinearRegression(object):
         for m in xrange(data_size):
             row = features[m, :]
             total += (self.__hypothesis_function(row) - labels[m, 0]) * features[m, index]
-        return self.learning_rate * total / float(data_size)
+        regularization = self.regularization_rate * self.thetas[0, index]
+        return (self.learning_rate * total + regularization) / float(data_size)
 
     def __convergence_test(self, cost):
         """
@@ -135,7 +138,10 @@ class LinearRegression(object):
         :return: None
         """
         features = LinearRegression.add_ones_column(features)
-        self.thetas = (np.linalg.pinv(features.transpose() * features) * features.transpose() * labels).transpose()
+        _, feature_size = features.shape
+        regularization = self.regularization_rate * np.identity(feature_size, dtype=features.dtype)
+        regularization[0, 0] = 0
+        self.thetas = (np.linalg.pinv(features.transpose() * features + regularization) * features.transpose() * labels).transpose()
 
     def train(self, features, labels):
         """
@@ -174,10 +180,11 @@ class LinearRegression(object):
 
 
 def test():
-    lr = LinearRegression(learning_method=LinearRegression.gradient_descent,
+    lr = LinearRegression(learning_method=LinearRegression.normal_equation,
                           max_steps=2000,
-                          threshold=0.001,
-                          enable_feature_scale=False)
+                          threshold=0.000001,
+                          enable_feature_scale=False,
+                          regularization_rate=0.0)
 
     features = np.matrix([[1, 2, 3, 4, 5], [1, 2, 3, 4, 6]], dtype='f').transpose()
     labels = np.matrix([[10, 18, 26, 34, 45]], dtype='f').transpose()
