@@ -105,9 +105,7 @@ class BinaryLogisticRegression(object):
 
             if previous_learning_cost:
                 cost_diff = abs(previous_learning_cost - current_learning_cost)
-                previous_learning_cost = current_learning_cost
-            else:
-                previous_learning_cost = current_learning_cost
+            previous_learning_cost = current_learning_cost
 
             current_learning_cost = float('-inf')
             steps += 1

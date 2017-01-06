@@ -6,13 +6,13 @@ class ModelNotTrainedError(Exception):
 
 
 class LinearRegression(object):
-    default = 0
-    gradient_descent = 1
-    normal_equation = 2
+    DEFAULT = 0
+    GRADIENT_DESCENT = 1
+    NORMAL_EQUATION = 2
 
     def __init__(self,
                  learning_rate=0.05,
-                 learning_method=default,
+                 learning_method=DEFAULT,
                  max_steps=2000,
                  threshold=0.0001,
                  regularization_rate=0.0,
@@ -122,9 +122,7 @@ class LinearRegression(object):
 
             if previous_learning_cost:
                 cost_diff = abs(previous_learning_cost - current_learning_cost)
-                previous_learning_cost = current_learning_cost
-            else:
-                previous_learning_cost = current_learning_cost
+            previous_learning_cost = current_learning_cost
 
             current_learning_cost = float('-inf')
             steps += 1
@@ -152,9 +150,9 @@ class LinearRegression(object):
         """
         data_size, feature_size = features.shape
 
-        if self.learning_method == LinearRegression.gradient_descent:
+        if self.learning_method == LinearRegression.GRADIENT_DESCENT:
             self.__gradient_descent(features, labels)
-        elif self.learning_method == LinearRegression.normal_equation:
+        elif self.learning_method == LinearRegression.NORMAL_EQUATION:
             self.__normal_equation(features, labels)
         else:
             if feature_size >= 100:
@@ -172,7 +170,7 @@ class LinearRegression(object):
         if not self.has_trained_flag:
             raise ModelNotTrainedError('Linear regression model is used before being trained.')
 
-        if self.enable_feature_scale and self.learning_method == LinearRegression.gradient_descent:
+        if self.enable_feature_scale and self.learning_method == LinearRegression.GRADIENT_DESCENT:
             features = LinearRegression.scale_features(features)
 
         features = LinearRegression.add_ones_column(features)
@@ -180,7 +178,7 @@ class LinearRegression(object):
 
 
 def test():
-    lr = LinearRegression(learning_method=LinearRegression.normal_equation,
+    lr = LinearRegression(learning_method=LinearRegression.NORMAL_EQUATION,
                           max_steps=2000,
                           threshold=0.000001,
                           enable_feature_scale=False,
