@@ -12,3 +12,4 @@ Algorithms includes
     * **Linear regression**
 
 * Unsupervised
+    * **K-means**
